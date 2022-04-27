@@ -12,6 +12,7 @@ use solana_program::{
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
 pub struct GreetingAccount {
    pub name: String,
+   pub counter: u32
 }
 
 // Declare and export the program's entrypoint
@@ -36,15 +37,25 @@ pub fn process_instruction(
         msg!("Greeted account does not have the correct program id");
         return Err(ProgramError::IncorrectProgramId);
     }
- 
-    // Deserialize the input data, and store it in a GreetingAccout struct
-    let input_data = GreetingAccount::try_from_slice(&input).unwrap();
- 
-    //Say GM in the Program output
-    msg!("GM {}", input_data.name);
- 
-    //Serialize the name, and store it in the passed in account
-    input_data.serialize(&mut &mut account.try_borrow_mut_data()?[..])?;
+
+    // if uninitiated we will use input slice else, else will tap on current greeting account
+    let modified_account = match GreetingAccount::try_from_slice(&account.data.borrow()) {
+        Ok(mut greeting_account) => { 
+            greeting_account.counter += 1;
+            //Serialize the name, and store it in the passed in account
+            greeting_account
+        },
+        Err(_) => {
+            // Deserialize the input data, and store it in a GreetingAccout struct
+            let mut input_data = GreetingAccount::try_from_slice(&input)?;
+            input_data.counter = 1;
+            input_data
+            
+        }
+
+    };
+
+    modified_account.serialize(&mut &mut account.try_borrow_mut_data()?[..])?;
 
    Ok(())
 }

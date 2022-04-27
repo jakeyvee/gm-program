@@ -53,24 +53,28 @@ const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'gm_program.so');
 */
 const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'gm_program-keypair.json');
 
-const NAME_FOR_GM='Glass Chewer'
+const NAME_FOR_GM='TESTING 07'
 
 /**
 * Borsh class and schema definition for greeting accounts
 */
 
 class GmAccount {
+  counter = 0;
   name = "";
-  constructor(fields: {name: string} | undefined = undefined) {
+  constructor(fields: {name: string, counter: number} | undefined = undefined) {
     if (fields) {
       this.name = fields.name;
+      this.counter = fields.counter;
     }
   }
   static schema = new Map([[GmAccount,
       {
           kind: 'struct',
           fields: [
-              ['name', 'string']]
+              ['name', 'string'],
+              ['counter', 'u32']
+            ]
       }]]);
 }
 
@@ -80,7 +84,7 @@ class GmAccount {
 */
 const GREETING_SIZE = borsh.serialize(
   GmAccount.schema,
-  new GmAccount({ name: NAME_FOR_GM }))
+  new GmAccount({name: NAME_FOR_GM, counter: 0}))
 .length;
 
 /**
@@ -204,7 +208,8 @@ export async function sayGm(): Promise<void> {
   //first we serialize the name data
 
   let gm = new GmAccount({
-      name: NAME_FOR_GM
+      name: NAME_FOR_GM,
+      counter: 0
   })
 
 
@@ -228,6 +233,7 @@ export async function sayGm(): Promise<void> {
 * Report the name of the account that we said GM to
 */
 export async function reportGm(): Promise<void> {
+  console.log(GREETING_SIZE)
   const accountInfo = await connection.getAccountInfo(greetedPubkey);
   if (accountInfo === null) {
       throw 'Error: cannot find the greeted account';
@@ -239,7 +245,9 @@ export async function reportGm(): Promise<void> {
   );
   console.log(
       greetedPubkey.toBase58(),
-      'GM was said to ',
-      greeting.name
+      'GM was said to',
+      greeting.name,
+      greeting.counter,
+      'time(s)!'
   );
 }
